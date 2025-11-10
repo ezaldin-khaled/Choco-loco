@@ -16,7 +16,7 @@ const getBaseApiUrl = (): string => {
   
   if (isHttps && typeof window !== 'undefined') {
     console.warn(`[API Config] Frontend is on HTTPS, using HTTPS for API: ${url}`);
-    console.warn('[API Config] If API server doesn't support HTTPS, requests will fail. Set up HTTPS on the API server or use a reverse proxy.');
+    console.warn('[API Config] If API server doesn\'t support HTTPS, requests will fail. Set up HTTPS on the API server or use a reverse proxy.');
   }
   
   return url;
