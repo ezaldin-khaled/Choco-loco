@@ -1,5 +1,43 @@
-export const API_URL = process.env['REACT_APP_API_URL'] || 'http://164.90.215.173/graphql/';
-export const MEDIA_URL = process.env['REACT_APP_MEDIA_URL'] || 'http://164.90.215.173/media';
+// Get the base API URL from environment or use default
+const getBaseApiUrl = (): string => {
+  // If explicitly set in environment, use it
+  if (process.env['REACT_APP_API_URL']) {
+    return process.env['REACT_APP_API_URL'];
+  }
+  
+  // If running on HTTPS, use HTTPS for API (to avoid mixed content errors)
+  // Otherwise use HTTP
+  // NOTE: If the API server doesn't support HTTPS, you'll need to:
+  // 1. Set up HTTPS on the API server (recommended), OR
+  // 2. Use a reverse proxy with SSL termination
+  const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+  const protocol = isHttps ? 'https' : 'http';
+  const url = `${protocol}://164.90.215.173/graphql/`;
+  
+  if (isHttps && typeof window !== 'undefined') {
+    console.warn(`[API Config] Frontend is on HTTPS, using HTTPS for API: ${url}`);
+    console.warn('[API Config] If API server doesn't support HTTPS, requests will fail. Set up HTTPS on the API server or use a reverse proxy.');
+  }
+  
+  return url;
+};
+
+// Get the base media URL from environment or use default
+const getBaseMediaUrl = (): string => {
+  // If explicitly set in environment, use it
+  if (process.env['REACT_APP_MEDIA_URL']) {
+    return process.env['REACT_APP_MEDIA_URL'];
+  }
+  
+  // If running on HTTPS, use HTTPS for media (to avoid mixed content errors)
+  // Otherwise use HTTP
+  const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+  const protocol = isHttps ? 'https' : 'http';
+  return `${protocol}://164.90.215.173/media`;
+};
+
+export const API_URL = getBaseApiUrl();
+export const MEDIA_URL = getBaseMediaUrl();
 
 /**
  * Get full image URL from API response

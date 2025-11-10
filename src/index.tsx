@@ -3,12 +3,16 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import ErrorBoundary from './components/ErrorBoundary';
+import { API_URL, MEDIA_URL } from './config/api';
 
 // Add initialization logging
 console.log('🚀 Starting app initialization...');
 console.log('Environment:', process.env['NODE_ENV']);
-console.log('API URL:', process.env['REACT_APP_API_URL'] || 'http://164.90.215.173/graphql/');
-console.log('Media URL:', process.env['REACT_APP_MEDIA_URL'] || 'http://164.90.215.173/media');
+console.log('Page protocol:', typeof window !== 'undefined' ? window.location.protocol : 'N/A');
+console.log('API URL (resolved):', API_URL);
+console.log('Media URL (resolved):', MEDIA_URL);
+console.log('API URL (env):', process.env['REACT_APP_API_URL'] || 'not set (using auto-detection)');
+console.log('Media URL (env):', process.env['REACT_APP_MEDIA_URL'] || 'not set (using auto-detection)');
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {

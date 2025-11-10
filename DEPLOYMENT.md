@@ -70,8 +70,43 @@ If you see `%PUBLIC_URL%` in the console, the server is still serving the wrong 
 
 ## Environment Variables
 
-Make sure these are set in Digital Ocean:
-- `REACT_APP_API_URL=http://164.90.215.173/graphql/`
-- `REACT_APP_MEDIA_URL=http://164.90.215.173/media`
-- `NODE_ENV=production`
+### ⚠️ IMPORTANT: HTTPS Configuration
+
+**If your frontend is served over HTTPS** (which it is on Digital Ocean App Platform), you **MUST** use HTTPS for your API URLs to avoid mixed content errors.
+
+Make sure these are set in Digital Ocean App Platform:
+
+**Option 1: If API server supports HTTPS (Recommended)**
+```
+REACT_APP_API_URL=https://164.90.215.173/graphql/
+REACT_APP_MEDIA_URL=https://164.90.215.173/media
+NODE_ENV=production
+```
+
+**Option 2: If API server doesn't support HTTPS yet**
+You have two choices:
+1. **Set up HTTPS on your API server** (recommended)
+   - Use Let's Encrypt for free SSL certificates
+   - Configure nginx or your web server to serve HTTPS
+   
+2. **Use a reverse proxy with SSL termination**
+   - Set up nginx on the API server with SSL
+   - Point the frontend to the HTTPS endpoint
+
+**Option 3: Auto-detection (Current Implementation)**
+If you don't set `REACT_APP_API_URL` and `REACT_APP_MEDIA_URL`, the app will automatically:
+- Use HTTPS when the frontend is on HTTPS
+- Use HTTP when the frontend is on HTTP
+
+**⚠️ Note:** If the API server doesn't support HTTPS, requests will fail with network errors. You must set up HTTPS on the API server or use a reverse proxy.
+
+### Troubleshooting Network Errors
+
+If you see `NetworkError when attempting to fetch resource`:
+
+1. **Check browser console** for detailed error messages
+2. **Verify API URL** - Check what URL is being used (should be HTTPS if frontend is HTTPS)
+3. **Test API endpoint** - Try accessing `https://164.90.215.173/graphql/` directly in browser
+4. **Check CORS** - Ensure API server allows requests from your frontend domain
+5. **Verify SSL** - If using HTTPS, ensure the API server has a valid SSL certificate
 

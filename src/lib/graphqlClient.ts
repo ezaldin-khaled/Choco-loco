@@ -61,20 +61,85 @@ const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
   if (networkError) {
     console.error(`[Network error]: ${networkError}`);
     const nError = networkError as any;
+    
+    // Check for mixed content errors (HTTPS page trying to access HTTP resource)
+    if (networkError.message?.includes('Mixed Content') || 
+        networkError.message?.includes('blocked:mixed-content') ||
+        (typeof window !== 'undefined' && window.location.protocol === 'https:' && API_URL.startsWith('http://'))) {
+      console.error('[Mixed Content Error] HTTPS page cannot access HTTP API');
+      console.error('Current page protocol:', window.location.protocol);
+      console.error('API URL:', API_URL);
+      console.error('Solution: Ensure API URL uses HTTPS when frontend is on HTTPS');
+    }
+    
+    // Check for CORS errors
+    if (networkError.message?.includes('CORS') || networkError.message?.includes('cors')) {
+      console.error('[CORS Error] Cross-origin request blocked');
+      console.error('API URL:', API_URL);
+      console.error('Current origin:', typeof window !== 'undefined' ? window.location.origin : 'N/A');
+    }
+    
     if (nError.statusCode === 400) {
       console.error('400 Bad Request - Response body:', nError.result);
       console.error('Request was:', operation.operationName, operation.variables);
       console.error('Query:', operation.query.loc?.source.body);
     }
+    
+    // Log the full error details for debugging
+    console.error('Network error details:', {
+      message: networkError.message,
+      name: networkError.name,
+      statusCode: nError.statusCode,
+      result: nError.result,
+      response: nError.response,
+    });
   }
 });
 
-// Create HTTP link
+// Create HTTP link with better error handling
 const httpLink = createHttpLink({
   uri: API_URL,
   credentials: 'include', // Include cookies for CSRF token
   fetchOptions: {
     mode: 'cors',
+  },
+  fetch: async (uri, options) => {
+    try {
+      const response = await fetch(uri, options);
+      return response;
+    } catch (error: any) {
+      // Enhanced error logging for network failures
+      console.error('[HTTP Link] Fetch failed:', {
+        uri,
+        error: error.message,
+        name: error.name,
+        type: error.type,
+      });
+      
+      // Check if it's a network error (connection refused, SSL error, etc.)
+      if (error.message?.includes('Failed to fetch') || 
+          error.message?.includes('NetworkError') ||
+          error.name === 'TypeError') {
+        const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+        const apiUrl = uri.toString();
+        const isHttpsApi = apiUrl.startsWith('https://');
+        
+        if (isHttps && isHttpsApi) {
+          console.error('[HTTP Link] ⚠️ HTTPS API request failed. Possible causes:');
+          console.error('  1. API server does not support HTTPS');
+          console.error('  2. SSL certificate issue');
+          console.error('  3. API server is down or unreachable');
+          console.error('  4. CORS configuration issue');
+          console.error('');
+          console.error('💡 Solutions:');
+          console.error('  - Set up HTTPS on the API server (recommended)');
+          console.error('  - Use a reverse proxy with SSL termination');
+          console.error('  - Set REACT_APP_API_URL environment variable to an HTTPS endpoint');
+        }
+      }
+      
+      throw error;
+    }
   },
 });
 
