@@ -16,5 +16,38 @@
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
+    <script>
+      // Diagnostic script to help debug white screen issues
+      console.log('📄 HTML loaded');
+      console.log('Root element:', document.getElementById('root'));
+      console.log('Document ready state:', document.readyState);
+      
+      // Check if React scripts are loading
+      window.addEventListener('load', function() {
+        console.log('📦 All resources loaded');
+        setTimeout(function() {
+          const root = document.getElementById('root');
+          if (root) {
+            if (root.innerHTML.trim() === '') {
+              console.error('⚠️ Root element is empty after 2 seconds!');
+              console.log('This might mean React failed to render.');
+              console.log('Check the console for React errors above.');
+            } else {
+              console.log('✅ Root element has content');
+              console.log('First 200 chars:', root.innerHTML.substring(0, 200));
+            }
+          } else {
+            console.error('❌ Root element not found!');
+          }
+        }, 2000);
+      });
+      
+      // Log any script loading errors
+      window.addEventListener('error', function(event) {
+        if (event.target && event.target.tagName === 'SCRIPT') {
+          console.error('❌ Script loading error:', event.target.src || event.target);
+        }
+      }, true);
+    </script>
   </body>
 </html>

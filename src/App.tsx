@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ApolloProvider } from '@apollo/client';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { apolloClient, getSessionKey } from './lib/graphqlClient';
 import { AuthProvider } from './hooks/useAuth';
 import Header from './components/Header';
@@ -22,10 +22,38 @@ import PaymentFailure from './components/PaymentFailure';
 import './App.css';
 
 function App() {
+  const [isInitialized, setIsInitialized] = useState(false);
+
   // Initialize cart session on app load
   useEffect(() => {
-    getSessionKey();
+    console.log('🛒 Initializing cart session...');
+    try {
+      getSessionKey();
+      console.log('✅ Cart session initialized');
+    } catch (error) {
+      console.error('❌ Error initializing cart session:', error);
+    }
+    setIsInitialized(true);
   }, []);
+
+  console.log('🎨 Rendering App component...', { isInitialized });
+
+  // Show loading state briefly while initializing
+  if (!isInitialized) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        minHeight: '100vh',
+        fontSize: '18px',
+        color: '#666',
+        fontFamily: 'Arial, sans-serif'
+      }}>
+        <div>Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <ApolloProvider client={apolloClient}>
