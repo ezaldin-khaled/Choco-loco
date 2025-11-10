@@ -1,25 +1,45 @@
 // Get the base API URL from environment or use default
 const getBaseApiUrl = (): string => {
+  let url: string;
+  
   // If explicitly set in environment, use it
   if (process.env['REACT_APP_API_URL']) {
-    return process.env['REACT_APP_API_URL'];
+    url = process.env['REACT_APP_API_URL'];
+  } else {
+    // API server supports HTTPS, so default to HTTPS
+    url = 'https://164.90.215.173/graphql/';
   }
   
-  // API server supports HTTPS, so default to HTTPS
-  // If frontend is on HTTP (local development), still use HTTPS for API
-  // to avoid mixed content issues when frontend is eventually on HTTPS
-  return 'https://164.90.215.173/graphql/';
+  // If frontend is on HTTPS and API URL is HTTP, convert to HTTPS
+  // This prevents mixed content errors
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:' && url.startsWith('http://')) {
+    url = url.replace('http://', 'https://');
+    console.warn(`[API Config] Converted HTTP API URL to HTTPS: ${url}`);
+  }
+  
+  return url;
 };
 
 // Get the base media URL from environment or use default
 const getBaseMediaUrl = (): string => {
+  let url: string;
+  
   // If explicitly set in environment, use it
   if (process.env['REACT_APP_MEDIA_URL']) {
-    return process.env['REACT_APP_MEDIA_URL'];
+    url = process.env['REACT_APP_MEDIA_URL'];
+  } else {
+    // API server supports HTTPS, so default to HTTPS
+    url = 'https://164.90.215.173/media';
   }
   
-  // API server supports HTTPS, so default to HTTPS
-  return 'https://164.90.215.173/media';
+  // If frontend is on HTTPS and media URL is HTTP, convert to HTTPS
+  // This prevents mixed content errors
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:' && url.startsWith('http://')) {
+    url = url.replace('http://', 'https://');
+    console.warn(`[API Config] Converted HTTP media URL to HTTPS: ${url}`);
+  }
+  
+  return url;
 };
 
 export const API_URL = getBaseApiUrl();
