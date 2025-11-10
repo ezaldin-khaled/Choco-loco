@@ -21,10 +21,39 @@
       console.log('📄 HTML loaded');
       console.log('Root element:', document.getElementById('root'));
       console.log('Document ready state:', document.readyState);
+      console.log('Current URL:', window.location.href);
+      
+      // Check if we're using the built version or source version
+      const scripts = document.querySelectorAll('script[src]');
+      console.log('📜 Scripts found:', scripts.length);
+      scripts.forEach((script, index) => {
+        console.log(`Script ${index + 1}:`, script.src || script.getAttribute('src'));
+      });
+      
+      // Check for PUBLIC_URL not being replaced (indicates wrong HTML being served)
+      const htmlContent = document.documentElement.outerHTML;
+      if (htmlContent.includes('%PUBLIC_URL%')) {
+        console.error('❌ CRITICAL: %PUBLIC_URL% found in HTML!');
+        console.error('This means the server is serving public/index.html instead of build/index.html');
+        console.error('The build/index.html should have PUBLIC_URL already replaced.');
+        console.error('Please ensure your server is serving files from the build/ directory!');
+      } else {
+        console.log('✅ PUBLIC_URL properly replaced (or not present)');
+      }
       
       // Check if React scripts are loading
       window.addEventListener('load', function() {
         console.log('📦 All resources loaded');
+        
+        // Check if main.js loaded
+        const mainScript = Array.from(scripts).find(s => s.src && s.src.includes('main.'));
+        if (!mainScript) {
+          console.error('❌ CRITICAL: Main React script not found!');
+          console.error('Expected script with "main." in the name');
+        } else {
+          console.log('✅ Main script tag found:', mainScript.src);
+        }
+        
         setTimeout(function() {
           const root = document.getElementById('root');
           if (root) {
@@ -32,6 +61,8 @@
               console.error('⚠️ Root element is empty after 2 seconds!');
               console.log('This might mean React failed to render.');
               console.log('Check the console for React errors above.');
+              console.log('If you see "🚀 Starting app initialization..." above, React is loading but not rendering.');
+              console.log('If you DON\'T see that message, React JavaScript bundle is not loading.');
             } else {
               console.log('✅ Root element has content');
               console.log('First 200 chars:', root.innerHTML.substring(0, 200));
@@ -46,6 +77,14 @@
       window.addEventListener('error', function(event) {
         if (event.target && event.target.tagName === 'SCRIPT') {
           console.error('❌ Script loading error:', event.target.src || event.target);
+          console.error('Error details:', event.message, event.filename, event.lineno);
+        }
+      }, true);
+      
+      // Check for network errors
+      window.addEventListener('error', function(event) {
+        if (event.target && (event.target.tagName === 'LINK' || event.target.tagName === 'SCRIPT')) {
+          console.error('❌ Resource loading error:', event.target.href || event.target.src);
         }
       }, true);
     </script>
