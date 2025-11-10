@@ -126,15 +126,25 @@ const httpLink = createHttpLink({
         
         if (isHttps && isHttpsApi) {
           console.error('[HTTP Link] ⚠️ HTTPS API request failed. Possible causes:');
-          console.error('  1. API server does not support HTTPS');
+          console.error('  1. API server does not support HTTPS (most likely)');
           console.error('  2. SSL certificate issue');
           console.error('  3. API server is down or unreachable');
           console.error('  4. CORS configuration issue');
           console.error('');
+          console.error('🔍 To verify:');
+          console.error('  - Open https://164.90.215.173/graphql/ in your browser');
+          console.error('  - If it fails to load, HTTPS is not set up on the API server');
+          console.error('');
           console.error('💡 Solutions:');
-          console.error('  - Set up HTTPS on the API server (recommended)');
-          console.error('  - Use a reverse proxy with SSL termination');
-          console.error('  - Set REACT_APP_API_URL environment variable to an HTTPS endpoint');
+          console.error('  1. Set up HTTPS on the API server (recommended)');
+          console.error('     - Use Let\'s Encrypt/Certbot');
+          console.error('     - Configure nginx or your web server for HTTPS');
+          console.error('  2. Use a reverse proxy with SSL termination');
+          console.error('  3. Verify the API server actually supports HTTPS');
+          console.error('');
+          console.error('⚠️ IMPORTANT: If the API server only supports HTTP,');
+          console.error('   you cannot use it from an HTTPS frontend due to mixed content blocking.');
+          console.error('   You MUST set up HTTPS on the API server.');
         }
       }
       
