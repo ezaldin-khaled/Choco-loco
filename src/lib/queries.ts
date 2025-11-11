@@ -1004,7 +1004,6 @@ export const UPLOAD_PRODUCT_USECASE_IMAGE = gql`
       image {
         id
         image
-        altText
         displayOrder
       }
     }
