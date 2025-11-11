@@ -54,7 +54,7 @@ export const MEDIA_URL = BACKEND_URL;
  * Get full image URL from API response
  * According to the guide: Full Image URL = Backend URL + Image Path
  * 
- * @param imagePath - Path from API (e.g., "/media/products/image.jpg")
+ * @param imagePath - Path from API (e.g., "/media/products/image.jpg" or "/products/image.jpg")
  * @returns Full URL to the image (e.g., "https://164.90.215.173/media/products/image.jpg")
  */
 export const getImageUrl = (imagePath: string | null | undefined): string => {
@@ -67,14 +67,23 @@ export const getImageUrl = (imagePath: string | null | undefined): string => {
     return imagePath;
   }
   
-  // Image paths from API come as "/media/products/..." or "/media/categories/..." etc.
-  // Formula: Backend URL + Image Path
-  // Example: "https://164.90.215.173" + "/media/products/image.jpg"
-  if (imagePath.startsWith('/')) {
-    return `${BACKEND_URL}${imagePath}`;
+  // Normalize the path: ensure it starts with /
+  let normalizedPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+  
+  // If path starts with /products/, /categories/, etc. but not /media/, add /media/ prefix
+  // Backend sometimes returns "/products/image.jpg" instead of "/media/products/image.jpg"
+  if (normalizedPath.startsWith('/products/') || 
+      normalizedPath.startsWith('/categories/') ||
+      normalizedPath.startsWith('/brands/') ||
+      normalizedPath.startsWith('/headers/') ||
+      normalizedPath.startsWith('/icons/')) {
+    if (!normalizedPath.startsWith('/media/')) {
+      normalizedPath = `/media${normalizedPath}`;
+    }
   }
   
-  // If path doesn't start with /, add it
-  return `${BACKEND_URL}/${imagePath}`;
+  // Formula: Backend URL + Image Path
+  // Example: "https://164.90.215.173" + "/media/products/image.jpg"
+  return `${BACKEND_URL}${normalizedPath}`;
 };
 
