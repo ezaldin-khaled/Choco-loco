@@ -167,8 +167,13 @@ const authLink = setContext((_, { headers }) => {
   
   const authHeaders: Record<string, string> = {
     ...headers,
-    'Content-Type': 'application/json',
   };
+  
+  // Only set Content-Type for non-file upload requests
+  // File uploads need multipart/form-data which the browser sets automatically
+  if (!headers?.['content-type']?.includes('multipart/form-data')) {
+    authHeaders['Content-Type'] = headers?.['content-type'] || 'application/json';
+  }
   
   // Add JWT token if available
   // Backend expects "Bearer" prefix, not "JWT"

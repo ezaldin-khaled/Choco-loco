@@ -51,7 +51,7 @@ const ProductsManagement: React.FC = () => {
   const [useCaseImages, setUseCaseImages] = useState<Array<{ file: File; altText: string; preview: string }>>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
 
-  const { data: productsData, loading: productsLoading, error: productsError } = useQuery(GET_PRODUCTS);
+  const { data: productsData, loading: productsLoading, error: productsError, refetch: refetchProducts } = useQuery(GET_PRODUCTS);
   const { data: brandsData, loading: brandsLoading } = useQuery(GET_BRANDS);
   const { data: categoriesData, loading: categoriesLoading } = useQuery(GET_CATEGORIES);
   
@@ -70,7 +70,15 @@ const ProductsManagement: React.FC = () => {
       const img = mainImages[i];
       if (!img) continue; // Skip if image is undefined
       try {
-        await uploadProductImage({
+        console.log(`[Image Upload] Uploading main image ${i + 1}/${mainImages.length}:`, {
+          fileName: img.file.name,
+          fileSize: img.file.size,
+          fileType: img.file.type,
+          isPrimary: img.isPrimary,
+          displayOrder: i + 1,
+        });
+        
+        const result = await uploadProductImage({
           variables: {
             productId,
             image: img.file,
@@ -84,8 +92,16 @@ const ProductsManagement: React.FC = () => {
             },
           },
         });
-      } catch (err) {
-        console.error(`Error uploading main image ${i + 1}:`, err);
+        
+        console.log(`[Image Upload] Main image ${i + 1} uploaded successfully:`, result.data);
+      } catch (err: any) {
+        console.error(`[Image Upload] Error uploading main image ${i + 1}:`, err);
+        console.error(`[Image Upload] Error details:`, {
+          message: err?.message,
+          graphQLErrors: err?.graphQLErrors,
+          networkError: err?.networkError,
+          stack: err?.stack,
+        });
         throw err;
       }
     }
@@ -95,7 +111,14 @@ const ProductsManagement: React.FC = () => {
       const img = useCaseImages[i];
       if (!img) continue; // Skip if image is undefined
       try {
-        await uploadUseCaseImage({
+        console.log(`[Image Upload] Uploading use case image ${i + 1}/${useCaseImages.length}:`, {
+          fileName: img.file.name,
+          fileSize: img.file.size,
+          fileType: img.file.type,
+          displayOrder: i + 1,
+        });
+        
+        const result = await uploadUseCaseImage({
           variables: {
             productId,
             image: img.file,
@@ -108,8 +131,16 @@ const ProductsManagement: React.FC = () => {
             },
           },
         });
-      } catch (err) {
-        console.error(`Error uploading use case image ${i + 1}:`, err);
+        
+        console.log(`[Image Upload] Use case image ${i + 1} uploaded successfully:`, result.data);
+      } catch (err: any) {
+        console.error(`[Image Upload] Error uploading use case image ${i + 1}:`, err);
+        console.error(`[Image Upload] Error details:`, {
+          message: err?.message,
+          graphQLErrors: err?.graphQLErrors,
+          networkError: err?.networkError,
+          stack: err?.stack,
+        });
         throw err;
       }
     }
@@ -124,10 +155,22 @@ const ProductsManagement: React.FC = () => {
       if (productId && (mainImages.length > 0 || useCaseImages.length > 0)) {
         setUploadingImages(true);
         try {
+          console.log('[Image Upload] Starting image upload for product:', productId);
           await uploadAllImages(parseInt(productId, 10));
+          console.log('[Image Upload] All images uploaded successfully');
+          
+          // Refetch products to get updated product with images
+          await refetchProducts();
+          
           setSuccess('Product created successfully with images!');
-        } catch (err) {
-          console.error('Error uploading images:', err);
+        } catch (err: any) {
+          console.error('[Image Upload] Error uploading images:', err);
+          console.error('[Image Upload] Error details:', {
+            message: err?.message,
+            graphQLErrors: err?.graphQLErrors,
+            networkError: err?.networkError,
+          });
+          setError('Product created, but images failed to upload. Check console for details.');
           setSuccess('Product created successfully, but some images failed to upload.');
         } finally {
           setUploadingImages(false);
