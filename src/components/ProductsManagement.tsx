@@ -255,10 +255,13 @@ const ProductsManagement: React.FC = () => {
   const removeMainImage = (index: number) => {
     setMainImages(prev => {
       const newImages = [...prev];
-      URL.revokeObjectURL(newImages[index].preview);
+      const imageToRemove = newImages[index];
+      if (imageToRemove) {
+        URL.revokeObjectURL(imageToRemove.preview);
+      }
       newImages.splice(index, 1);
       // If we removed the primary image, make the first one primary
-      if (newImages.length > 0 && prev[index].isPrimary) {
+      if (newImages.length > 0 && prev[index]?.isPrimary) {
         newImages[0].isPrimary = true;
       }
       return newImages;
@@ -269,7 +272,10 @@ const ProductsManagement: React.FC = () => {
   const removeUseCaseImage = (index: number) => {
     setUseCaseImages(prev => {
       const newImages = [...prev];
-      URL.revokeObjectURL(newImages[index].preview);
+      const imageToRemove = newImages[index];
+      if (imageToRemove) {
+        URL.revokeObjectURL(imageToRemove.preview);
+      }
       newImages.splice(index, 1);
       return newImages;
     });
