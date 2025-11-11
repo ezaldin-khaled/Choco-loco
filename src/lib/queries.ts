@@ -970,17 +970,11 @@ export const REGISTER = gql`
 
 // Product Image Mutations
 export const UPLOAD_PRODUCT_IMAGE = gql`
-  mutation UploadProductImage($productId: Int!, $image: Upload!, $altText: String, $isPrimary: Boolean, $displayOrder: Int) {
-    uploadProductImage(
-      productId: $productId
-      image: $image
-      altText: $altText
-      isPrimary: $isPrimary
-      displayOrder: $displayOrder
-    ) {
+  mutation UploadProductImage($input: ProductImageInput!) {
+    uploadProductImage(input: $input) {
       success
       message
-      image {
+      productImage {
         id
         image
         altText
@@ -992,16 +986,11 @@ export const UPLOAD_PRODUCT_IMAGE = gql`
 `;
 
 export const UPLOAD_PRODUCT_USECASE_IMAGE = gql`
-  mutation UploadProductUseCaseImage($productId: Int!, $image: Upload!, $altText: String, $displayOrder: Int) {
-    uploadProductUseCaseImage(
-      productId: $productId
-      image: $image
-      altText: $altText
-      displayOrder: $displayOrder
-    ) {
+  mutation UploadProductUseCaseImage($input: ProductImageInput!) {
+    uploadProductUseCaseImage(input: $input) {
       success
       message
-      image {
+      productImage {
         id
         image
         displayOrder

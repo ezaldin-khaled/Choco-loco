@@ -58,6 +58,16 @@ const ProductsManagement: React.FC = () => {
   const [uploadProductImage] = useMutation(UPLOAD_PRODUCT_IMAGE);
   const [uploadUseCaseImage] = useMutation(UPLOAD_PRODUCT_USECASE_IMAGE);
 
+  // Helper function to convert File to base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
   // Upload all images for a product
   const uploadAllImages = async (productId: number) => {
     const token = localStorage.getItem('jwt_token');
@@ -78,13 +88,18 @@ const ProductsManagement: React.FC = () => {
           displayOrder: i + 1,
         });
         
+        // Convert file to base64
+        const base64Image = await fileToBase64(img.file);
+        
         const result = await uploadProductImage({
           variables: {
-            productId,
-            image: img.file,
-            altText: img.altText || formData.name,
-            isPrimary: img.isPrimary,
-            displayOrder: i + 1,
+            input: {
+              productId: productId,
+              image: base64Image,
+              altText: img.altText || formData.name,
+              isPrimary: img.isPrimary,
+              displayOrder: i + 1,
+            },
           },
           context: {
             headers: {
@@ -118,12 +133,17 @@ const ProductsManagement: React.FC = () => {
           displayOrder: i + 1,
         });
         
+        // Convert file to base64
+        const base64Image = await fileToBase64(img.file);
+        
         const result = await uploadUseCaseImage({
           variables: {
-            productId,
-            image: img.file,
-            altText: img.altText || `${formData.name} use case ${i + 1}`,
-            displayOrder: i + 1,
+            input: {
+              productId: productId,
+              image: base64Image,
+              altText: img.altText || `${formData.name} use case ${i + 1}`,
+              displayOrder: i + 1,
+            },
           },
           context: {
             headers: {
