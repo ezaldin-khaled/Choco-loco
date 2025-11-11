@@ -76,12 +76,19 @@ const ProductPage: React.FC = () => {
     }
   };
 
-  // Get use case images from product
-  const useCaseImages = product?.usecaseImages?.slice(0, 4) || [];
+  // Get use case images from product, sorted by displayOrder
+  const useCaseImages = product?.usecaseImages
+    ? [...product.usecaseImages]
+        .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
+        .slice(0, 4)
+    : [];
   
-  // Get primary image
-  const primaryImage = product?.images?.find(img => img.isPrimary)?.image || 
-                       product?.images?.[0]?.image || '';
+  // Get primary image - find image with isPrimary: true, or first image, sorted by displayOrder
+  const sortedImages = product?.images
+    ? [...product.images].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
+    : [];
+  const primaryImage = sortedImages.find(img => img.isPrimary)?.image || 
+                       sortedImages[0]?.image || '';
 
   if (loading) {
     return (
@@ -125,7 +132,7 @@ const ProductPage: React.FC = () => {
               <div className="product-image-container">
                 <img 
                   src={getImageUrl(primaryImage)} 
-                  alt={product.name} 
+                  alt={sortedImages.find(img => img.isPrimary)?.altText || sortedImages[0]?.altText || product.name} 
                   className="product-main-image"
                   onError={(e) => {
                     e.currentTarget.src = '/Assets/logo.png';
@@ -280,12 +287,12 @@ const ProductPage: React.FC = () => {
         <section className="usage-examples">
           <div className="container">
             <div className="usage-grid">
-              {useCaseImages.map((image: { id: string; image: string }, index: number) => (
+              {useCaseImages.map((image: { id: string; image: string; altText?: string }, index: number) => (
                 <div key={image.id || index} className="usage-card">
                   <div className="usage-image">
                     <img 
                       src={getImageUrl(image.image)} 
-                      alt={`${product.name} usage ${index + 1}`}
+                      alt={image.altText || `${product.name} usage ${index + 1}`}
                       onError={(e) => {
                         e.currentTarget.src = '/Assets/logo.png';
                       }}
@@ -315,29 +322,34 @@ const ProductPage: React.FC = () => {
                 No related products found
               </div>
             ) : (
-              relatedProducts.map((relatedProduct) => (
-                <div 
-                  key={relatedProduct.id} 
-                  className="related-card"
-                  onClick={() => navigate(`/product/${relatedProduct.id}`)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <div className="related-image">
-                    <img 
-                      src={getImageUrl(
-                        relatedProduct.images?.find(img => img.isPrimary)?.image || 
-                        relatedProduct.images?.[0]?.image || 
-                        ''
-                      )} 
-                      alt={relatedProduct.name}
-                      onError={(e) => {
-                        e.currentTarget.src = '/Assets/logo.png';
-                      }}
-                    />
+              relatedProducts.map((relatedProduct) => {
+                const relatedSortedImages = relatedProduct.images
+                  ? [...relatedProduct.images].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
+                  : [];
+                const relatedPrimaryImage = relatedSortedImages.find(img => img.isPrimary)?.image || 
+                                           relatedSortedImages[0]?.image || '';
+                const relatedPrimaryImageObj = relatedSortedImages.find(img => img.isPrimary) || relatedSortedImages[0];
+                
+                return (
+                  <div 
+                    key={relatedProduct.id} 
+                    className="related-card"
+                    onClick={() => navigate(`/product/${relatedProduct.id}`)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <div className="related-image">
+                      <img 
+                        src={getImageUrl(relatedPrimaryImage)} 
+                        alt={relatedPrimaryImageObj?.altText || relatedProduct.name}
+                        onError={(e) => {
+                          e.currentTarget.src = '/Assets/logo.png';
+                        }}
+                      />
+                    </div>
+                    <p className="related-name">{relatedProduct.name}</p>
                   </div>
-                  <p className="related-name">{relatedProduct.name}</p>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>

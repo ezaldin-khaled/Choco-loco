@@ -21,7 +21,9 @@ interface SearchProduct {
   };
   images: Array<{
     image: string;
+    altText?: string;
     isPrimary: boolean;
+    displayOrder?: number;
   }>;
   inventory: {
     availableQuantity: number;

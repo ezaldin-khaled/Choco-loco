@@ -157,14 +157,18 @@ const Cart: React.FC = () => {
                       <div key={item.id} className="table-row">
                         <div className="product-cell">
                           {(() => {
-                            // Find primary image or first image
-                            const primaryImage = item.product.images?.find((img: { image: string; isPrimary?: boolean }) => img.isPrimary)?.image || 
-                                                 item.product.images?.[0]?.image || 
+                            // Sort images by displayOrder and find primary image or first image
+                            const sortedImages = item.product.images
+                              ? [...item.product.images].sort((a: any, b: any) => (a.displayOrder || 0) - (b.displayOrder || 0))
+                              : [];
+                            const primaryImage = sortedImages.find((img: { image: string; isPrimary?: boolean }) => img.isPrimary)?.image || 
+                                                 sortedImages[0]?.image || 
                                                  '';
+                            const primaryImageObj = sortedImages.find((img: { image: string; isPrimary?: boolean }) => img.isPrimary) || sortedImages[0];
                             return (
                               <img 
                                 src={primaryImage ? getImageUrl(primaryImage) : '/Assets/logo.png'} 
-                                alt={item.productName || item.product.name} 
+                                alt={primaryImageObj?.altText || item.productName || item.product.name} 
                                 className="cart-product-image"
                                 onError={(e) => {
                                   e.currentTarget.src = '/Assets/logo.png';

@@ -150,24 +150,29 @@ const Products: React.FC = () => {
               No products found
             </div>
           ) : (
-            products.map((product) => (
-              <div 
-                key={product.id} 
-                className="product-card"
-                onClick={() => handleProductClick(product.id)}
-              >
-                <div className="product-image">
-                  <img 
-                    src={getImageUrl(
-                      product.images?.find(img => img.isPrimary)?.image || 
-                      product.images?.[0]?.image || 
-                      ''
-                    )} 
-                    alt={product.images?.find(img => img.isPrimary)?.altText || product.name}
-                    onError={(e) => {
-                      e.currentTarget.src = '/Assets/logo.png';
-                    }}
-                  />
+            products.map((product) => {
+              // Sort images by displayOrder
+              const sortedImages = product.images
+                ? [...product.images].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
+                : [];
+              const primaryImage = sortedImages.find(img => img.isPrimary)?.image || 
+                                   sortedImages[0]?.image || '';
+              const primaryImageObj = sortedImages.find(img => img.isPrimary) || sortedImages[0];
+              
+              return (
+                <div 
+                  key={product.id} 
+                  className="product-card"
+                  onClick={() => handleProductClick(product.id)}
+                >
+                  <div className="product-image">
+                    <img 
+                      src={getImageUrl(primaryImage)} 
+                      alt={primaryImageObj?.altText || product.name}
+                      onError={(e) => {
+                        e.currentTarget.src = '/Assets/logo.png';
+                      }}
+                    />
                   <div className="product-actions">
                     <button 
                       className="action-btn"
@@ -203,7 +208,8 @@ const Products: React.FC = () => {
                   <div className="product-price">{formatPrice(product)}</div>
                 </div>
               </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>

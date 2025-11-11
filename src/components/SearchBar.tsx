@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProductSearch } from '../hooks/useProductSearch';
+import { getImageUrl } from '../config/api';
 import './SearchBar.css';
 
 const SearchBar: React.FC = () => {
@@ -55,7 +56,11 @@ const SearchBar: React.FC = () => {
   };
 
   const primaryImage = (product: typeof results[0]) => {
-    return product.images?.find(img => img.isPrimary) || product.images?.[0];
+    // Sort images by displayOrder
+    const sortedImages = product.images
+      ? [...product.images].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
+      : [];
+    return sortedImages.find(img => img.isPrimary) || sortedImages[0];
   };
 
   return (
@@ -102,8 +107,8 @@ const SearchBar: React.FC = () => {
                     <div className="result-image">
                       {image ? (
                         <img
-                          src={image.image}
-                          alt={product.name}
+                          src={getImageUrl(image.image)}
+                          alt={image.altText || product.name}
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
                             target.style.display = 'none';

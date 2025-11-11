@@ -24,6 +24,7 @@ export interface Product {
   usecaseImages?: Array<{
     id: string;
     image: string;
+    altText?: string;
     displayOrder?: number;
   }>;
   category?: {

@@ -20,35 +20,42 @@ const getBaseApiUrl = (): string => {
   return url;
 };
 
-// Get the base media URL from environment or use default
-const getBaseMediaUrl = (): string => {
+// Get the base backend URL from environment or use default
+const getBaseBackendUrl = (): string => {
   let url: string;
   
   // If explicitly set in environment, use it
-  if (process.env['REACT_APP_MEDIA_URL']) {
-    url = process.env['REACT_APP_MEDIA_URL'];
+  if (process.env['REACT_APP_BACKEND_URL']) {
+    url = process.env['REACT_APP_BACKEND_URL'];
   } else {
     // API server supports HTTPS, so default to HTTPS
-    url = 'https://164.90.215.173/media';
+    url = 'https://164.90.215.173';
   }
   
-  // If frontend is on HTTPS and media URL is HTTP, convert to HTTPS
+  // Remove trailing slash if present
+  url = url.replace(/\/$/, '');
+  
+  // If frontend is on HTTPS and backend URL is HTTP, convert to HTTPS
   // This prevents mixed content errors
   if (typeof window !== 'undefined' && window.location.protocol === 'https:' && url.startsWith('http://')) {
     url = url.replace('http://', 'https://');
-    console.warn(`[API Config] Converted HTTP media URL to HTTPS: ${url}`);
+    console.warn(`[API Config] Converted HTTP backend URL to HTTPS: ${url}`);
   }
   
   return url;
 };
 
 export const API_URL = getBaseApiUrl();
-export const MEDIA_URL = getBaseMediaUrl();
+export const BACKEND_URL = getBaseBackendUrl();
+// Keep MEDIA_URL for backward compatibility, but it's now just the backend URL
+export const MEDIA_URL = BACKEND_URL;
 
 /**
  * Get full image URL from API response
- * @param imagePath - Path from API (e.g., "/media/products/image.jpg" or "products/image.jpg")
- * @returns Full URL to the image
+ * According to the guide: Full Image URL = Backend URL + Image Path
+ * 
+ * @param imagePath - Path from API (e.g., "/media/products/image.jpg")
+ * @returns Full URL to the image (e.g., "https://164.90.215.173/media/products/image.jpg")
  */
 export const getImageUrl = (imagePath: string | null | undefined): string => {
   if (!imagePath) {
@@ -60,17 +67,14 @@ export const getImageUrl = (imagePath: string | null | undefined): string => {
     return imagePath;
   }
   
-  // If starts with /media, remove it and prepend MEDIA_URL
-  if (imagePath.startsWith('/media/')) {
-    return `${MEDIA_URL}${imagePath.substring(6)}`;
+  // Image paths from API come as "/media/products/..." or "/media/categories/..." etc.
+  // Formula: Backend URL + Image Path
+  // Example: "https://164.90.215.173" + "/media/products/image.jpg"
+  if (imagePath.startsWith('/')) {
+    return `${BACKEND_URL}${imagePath}`;
   }
   
-  // If just a path like "products/image.jpg", prepend MEDIA_URL
-  if (imagePath.startsWith('media/')) {
-    return `${MEDIA_URL}/${imagePath.substring(6)}`;
-  }
-  
-  // Default: prepend MEDIA_URL with a slash
-  return `${MEDIA_URL}/${imagePath}`;
+  // If path doesn't start with /, add it
+  return `${BACKEND_URL}/${imagePath}`;
 };
 
