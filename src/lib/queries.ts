@@ -49,7 +49,6 @@ export const GET_PRODUCTS = gql`
       usecaseImages {
         id
         image
-        altText
         displayOrder
       }
       variants {
@@ -112,7 +111,6 @@ export const GET_PRODUCT = gql`
       usecaseImages {
         id
         image
-        altText
         displayOrder
       }
       variantOptions {
