@@ -49,6 +49,7 @@ export const GET_PRODUCTS = gql`
       usecaseImages {
         id
         image
+        altText
         displayOrder
       }
       variants {
@@ -111,6 +112,7 @@ export const GET_PRODUCT = gql`
       usecaseImages {
         id
         image
+        altText
         displayOrder
       }
       variantOptions {
@@ -964,6 +966,49 @@ export const REGISTER = gql`
       }
       success
       message
+    }
+  }
+`;
+
+// Product Image Mutations
+export const UPLOAD_PRODUCT_IMAGE = gql`
+  mutation UploadProductImage($productId: Int!, $image: Upload!, $altText: String, $isPrimary: Boolean, $displayOrder: Int) {
+    uploadProductImage(
+      productId: $productId
+      image: $image
+      altText: $altText
+      isPrimary: $isPrimary
+      displayOrder: $displayOrder
+    ) {
+      success
+      message
+      image {
+        id
+        image
+        altText
+        isPrimary
+        displayOrder
+      }
+    }
+  }
+`;
+
+export const UPLOAD_PRODUCT_USECASE_IMAGE = gql`
+  mutation UploadProductUseCaseImage($productId: Int!, $image: Upload!, $altText: String, $displayOrder: Int) {
+    uploadProductUseCaseImage(
+      productId: $productId
+      image: $image
+      altText: $altText
+      displayOrder: $displayOrder
+    ) {
+      success
+      message
+      image {
+        id
+        image
+        altText
+        displayOrder
+      }
     }
   }
 `;

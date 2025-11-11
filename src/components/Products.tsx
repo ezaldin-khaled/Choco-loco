@@ -25,22 +25,6 @@ const Products: React.FC = () => {
   const { categories } = useCategories();
   const { addToCart, loading: addingToCart } = useAddToCart();
   
-  // Debug: Log products data when it changes
-  React.useEffect(() => {
-    if (products.length > 0) {
-      console.log('[Products] Loaded products:', products.length);
-      const firstProduct = products[0];
-      if (firstProduct) {
-        console.log('[Products] First product sample:', {
-          name: firstProduct.name,
-          hasImages: !!firstProduct.images,
-          imagesCount: firstProduct.images?.length || 0,
-          images: firstProduct.images
-        });
-      }
-    }
-  }, [products]);
-  
   // Get category name for display
   const activeCategory = categories.find(cat => cat.id === activeCategoryId);
 
@@ -167,26 +151,13 @@ const Products: React.FC = () => {
             </div>
           ) : (
             products.map((product) => {
-              // Sort images by displayOrder and filter out null/empty images
+              // Sort images by displayOrder
               const sortedImages = product.images
-                ? [...product.images]
-                    .filter(img => img && img.image) // Filter out null/undefined/empty images
-                    .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
+                ? [...product.images].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
                 : [];
               const primaryImage = sortedImages.find(img => img.isPrimary)?.image || 
                                    sortedImages[0]?.image || '';
               const primaryImageObj = sortedImages.find(img => img.isPrimary) || sortedImages[0];
-              
-              // Debug logging
-              if (!primaryImage) {
-                console.warn('[Products] No image found for product:', product.name, {
-                  hasImages: !!product.images,
-                  imagesCount: product.images?.length || 0,
-                  images: product.images
-                });
-              } else {
-                console.log('[Products] Image for', product.name, ':', primaryImage);
-              }
               
               return (
                 <div 

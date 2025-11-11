@@ -54,44 +54,27 @@ export const MEDIA_URL = BACKEND_URL;
  * Get full image URL from API response
  * According to the guide: Full Image URL = Backend URL + Image Path
  * 
- * @param imagePath - Path from API (e.g., "/media/products/image.jpg" or "products/image.jpg")
+ * @param imagePath - Path from API (e.g., "/media/products/image.jpg")
  * @returns Full URL to the image (e.g., "https://164.90.215.173/media/products/image.jpg")
  */
 export const getImageUrl = (imagePath: string | null | undefined): string => {
   if (!imagePath) {
-    console.warn('[getImageUrl] No image path provided, using fallback');
     return '/Assets/logo.png'; // Default fallback image
   }
   
   // If already a full URL, return as is
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-    console.log('[getImageUrl] Already full URL:', imagePath);
     return imagePath;
   }
   
-  // Image paths from API can come in different formats:
-  // 1. "/media/products/..." - full path with /media prefix
-  // 2. "products/..." or "categories/..." - relative path without /media
-  // Formula: Backend URL + /media/ + Image Path (if needed)
-  
-  // If path already starts with /media/, use it directly
-  if (imagePath.startsWith('/media/')) {
-    const fullUrl = `${BACKEND_URL}${imagePath}`;
-    console.log('[getImageUrl] Constructed URL (with /media/):', fullUrl, 'from path:', imagePath);
-    return fullUrl;
-  }
-  
-  // If path starts with / but not /media/, use it directly
+  // Image paths from API come as "/media/products/..." or "/media/categories/..." etc.
+  // Formula: Backend URL + Image Path
+  // Example: "https://164.90.215.173" + "/media/products/image.jpg"
   if (imagePath.startsWith('/')) {
-    const fullUrl = `${BACKEND_URL}${imagePath}`;
-    console.log('[getImageUrl] Constructed URL (with /):', fullUrl, 'from path:', imagePath);
-    return fullUrl;
+    return `${BACKEND_URL}${imagePath}`;
   }
   
-  // If path doesn't start with /, it's likely "products/..." or "categories/..."
-  // Add /media/ prefix to construct the full path
-  const fullUrl = `${BACKEND_URL}/media/${imagePath}`;
-  console.log('[getImageUrl] Constructed URL (added /media/):', fullUrl, 'from path:', imagePath);
-  return fullUrl;
+  // If path doesn't start with /, add it
+  return `${BACKEND_URL}/${imagePath}`;
 };
 

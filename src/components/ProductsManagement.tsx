@@ -1,6 +1,6 @@
 import React, { useState, FormEvent } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
-import { GET_PRODUCTS, CREATE_PRODUCT, UPDATE_PRODUCT, GET_BRANDS, GET_CATEGORIES } from '../lib/queries';
+import { GET_PRODUCTS, CREATE_PRODUCT, UPDATE_PRODUCT, GET_BRANDS, GET_CATEGORIES, UPLOAD_PRODUCT_IMAGE, UPLOAD_PRODUCT_USECASE_IMAGE } from '../lib/queries';
 import './ProductsManagement.css';
 
 interface Product {
@@ -45,15 +45,95 @@ const ProductsManagement: React.FC = () => {
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  
+  // Image upload state
+  const [mainImages, setMainImages] = useState<Array<{ file: File; altText: string; isPrimary: boolean; preview: string }>>([]);
+  const [useCaseImages, setUseCaseImages] = useState<Array<{ file: File; altText: string; preview: string }>>([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
 
   const { data: productsData, loading: productsLoading, error: productsError } = useQuery(GET_PRODUCTS);
   const { data: brandsData, loading: brandsLoading } = useQuery(GET_BRANDS);
   const { data: categoriesData, loading: categoriesLoading } = useQuery(GET_CATEGORIES);
   
+  const [uploadProductImage] = useMutation(UPLOAD_PRODUCT_IMAGE);
+  const [uploadUseCaseImage] = useMutation(UPLOAD_PRODUCT_USECASE_IMAGE);
+
+  // Upload all images for a product
+  const uploadAllImages = async (productId: number) => {
+    const token = localStorage.getItem('jwt_token');
+    if (!token) {
+      throw new Error('Authentication required');
+    }
+
+    // Upload main images
+    for (let i = 0; i < mainImages.length; i++) {
+      const img = mainImages[i];
+      try {
+        await uploadProductImage({
+          variables: {
+            productId,
+            image: img.file,
+            altText: img.altText || formData.name,
+            isPrimary: img.isPrimary,
+            displayOrder: i + 1,
+          },
+          context: {
+            headers: {
+              authorization: `Bearer ${token}`,
+            },
+          },
+        });
+      } catch (err) {
+        console.error(`Error uploading main image ${i + 1}:`, err);
+        throw err;
+      }
+    }
+
+    // Upload use case images
+    for (let i = 0; i < useCaseImages.length; i++) {
+      const img = useCaseImages[i];
+      try {
+        await uploadUseCaseImage({
+          variables: {
+            productId,
+            image: img.file,
+            altText: img.altText || `${formData.name} use case ${i + 1}`,
+            displayOrder: i + 1,
+          },
+          context: {
+            headers: {
+              authorization: `Bearer ${token}`,
+            },
+          },
+        });
+      } catch (err) {
+        console.error(`Error uploading use case image ${i + 1}:`, err);
+        throw err;
+      }
+    }
+  };
+  
   const [createProduct, { loading: creating }] = useMutation(CREATE_PRODUCT, {
     refetchQueries: [{ query: GET_PRODUCTS }],
-    onCompleted: () => {
-      setSuccess('Product created successfully!');
+    onCompleted: async (data) => {
+      const productId = data?.createProduct?.product?.id;
+      
+      // Upload images if product was created successfully and images are selected
+      if (productId && (mainImages.length > 0 || useCaseImages.length > 0)) {
+        setUploadingImages(true);
+        try {
+          await uploadAllImages(parseInt(productId, 10));
+          setSuccess('Product created successfully with images!');
+        } catch (err) {
+          console.error('Error uploading images:', err);
+          setSuccess('Product created successfully, but some images failed to upload.');
+        } finally {
+          setUploadingImages(false);
+        }
+      } else {
+        setSuccess('Product created successfully!');
+      }
+      
       setError('');
       resetForm();
       setShowForm(false);
@@ -131,6 +211,93 @@ const ProductsManagement: React.FC = () => {
       unitType: 'GRAM',
       isActive: true,
       featured: false,
+    });
+    // Clear image previews
+    mainImages.forEach(img => URL.revokeObjectURL(img.preview));
+    useCaseImages.forEach(img => URL.revokeObjectURL(img.preview));
+    setMainImages([]);
+    setUseCaseImages([]);
+  };
+
+
+  // Handle main image file selection
+  const handleMainImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    const newImages = files.slice(0, 3 - mainImages.length).map((file, index) => ({
+      file,
+      altText: formData.name || '',
+      isPrimary: mainImages.length === 0 && index === 0, // First image is primary by default
+      preview: URL.createObjectURL(file),
+    }));
+
+    setMainImages(prev => [...prev, ...newImages]);
+  };
+
+  // Handle use case image file selection
+  const handleUseCaseImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    const newImages = files.slice(0, 4 - useCaseImages.length).map((file) => ({
+      file,
+      altText: `${formData.name || 'Product'} use case`,
+      preview: URL.createObjectURL(file),
+    }));
+
+    setUseCaseImages(prev => [...prev, ...newImages]);
+  };
+
+  // Remove main image
+  const removeMainImage = (index: number) => {
+    setMainImages(prev => {
+      const newImages = [...prev];
+      URL.revokeObjectURL(newImages[index].preview);
+      newImages.splice(index, 1);
+      // If we removed the primary image, make the first one primary
+      if (newImages.length > 0 && prev[index].isPrimary) {
+        newImages[0].isPrimary = true;
+      }
+      return newImages;
+    });
+  };
+
+  // Remove use case image
+  const removeUseCaseImage = (index: number) => {
+    setUseCaseImages(prev => {
+      const newImages = [...prev];
+      URL.revokeObjectURL(newImages[index].preview);
+      newImages.splice(index, 1);
+      return newImages;
+    });
+  };
+
+  // Update image alt text
+  const updateMainImageAltText = (index: number, altText: string) => {
+    setMainImages(prev => {
+      const newImages = [...prev];
+      newImages[index].altText = altText;
+      return newImages;
+    });
+  };
+
+  const updateUseCaseImageAltText = (index: number, altText: string) => {
+    setUseCaseImages(prev => {
+      const newImages = [...prev];
+      newImages[index].altText = altText;
+      return newImages;
+    });
+  };
+
+  // Toggle primary image
+  const setPrimaryImage = (index: number) => {
+    setMainImages(prev => {
+      const newImages = prev.map((img, i) => ({
+        ...img,
+        isPrimary: i === index,
+      }));
+      return newImages;
     });
   };
 
@@ -425,9 +592,131 @@ const ProductsManagement: React.FC = () => {
             </label>
           </div>
 
+          {/* Main Product Images Section */}
+          <div className="admin-form-group">
+            <label>Main Product Images (up to 3)</label>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleMainImageChange}
+              disabled={mainImages.length >= 3}
+              style={{ marginBottom: '1rem' }}
+            />
+            {mainImages.length > 0 && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
+                {mainImages.map((img, index) => (
+                  <div key={index} style={{ border: '1px solid #ddd', borderRadius: '4px', padding: '0.5rem', position: 'relative' }}>
+                    <img
+                      src={img.preview}
+                      alt={img.altText}
+                      style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '4px' }}
+                    />
+                    <div style={{ marginTop: '0.5rem' }}>
+                      <input
+                        type="text"
+                        placeholder="Alt text"
+                        value={img.altText}
+                        onChange={(e) => updateMainImageAltText(index, e.target.value)}
+                        style={{ width: '100%', padding: '0.25rem', marginBottom: '0.25rem', fontSize: '0.875rem' }}
+                      />
+                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                        <label style={{ fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                          <input
+                            type="radio"
+                            name="primaryImage"
+                            checked={img.isPrimary}
+                            onChange={() => setPrimaryImage(index)}
+                          />
+                          Primary
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => removeMainImage(index)}
+                          style={{
+                            padding: '0.25rem 0.5rem',
+                            fontSize: '0.75rem',
+                            background: '#dc3545',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {mainImages.length >= 3 && (
+              <p style={{ fontSize: '0.875rem', color: '#666', marginTop: '0.5rem' }}>
+                Maximum 3 main images. Remove an image to add more.
+              </p>
+            )}
+          </div>
+
+          {/* Use Case Images Section */}
+          <div className="admin-form-group">
+            <label>Use Case Images (up to 4)</label>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleUseCaseImageChange}
+              disabled={useCaseImages.length >= 4}
+              style={{ marginBottom: '1rem' }}
+            />
+            {useCaseImages.length > 0 && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
+                {useCaseImages.map((img, index) => (
+                  <div key={index} style={{ border: '1px solid #ddd', borderRadius: '4px', padding: '0.5rem', position: 'relative' }}>
+                    <img
+                      src={img.preview}
+                      alt={img.altText}
+                      style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '4px' }}
+                    />
+                    <div style={{ marginTop: '0.5rem' }}>
+                      <input
+                        type="text"
+                        placeholder="Alt text"
+                        value={img.altText}
+                        onChange={(e) => updateUseCaseImageAltText(index, e.target.value)}
+                        style={{ width: '100%', padding: '0.25rem', marginBottom: '0.25rem', fontSize: '0.875rem' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeUseCaseImage(index)}
+                        style={{
+                          width: '100%',
+                          padding: '0.25rem 0.5rem',
+                          fontSize: '0.75rem',
+                          background: '#dc3545',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {useCaseImages.length >= 4 && (
+              <p style={{ fontSize: '0.875rem', color: '#666', marginTop: '0.5rem' }}>
+                Maximum 4 use case images. Remove an image to add more.
+              </p>
+            )}
+          </div>
+
           <div className="admin-form-actions">
-            <button type="submit" className="admin-submit-button" disabled={creating || updating}>
-              {creating || updating ? (editingProductId ? 'Updating...' : 'Creating...') : (editingProductId ? 'Update Product' : 'Create Product')}
+            <button type="submit" className="admin-submit-button" disabled={creating || updating || uploadingImages}>
+              {uploadingImages ? 'Uploading Images...' : creating || updating ? (editingProductId ? 'Updating...' : 'Creating...') : (editingProductId ? 'Update Product' : 'Create Product')}
             </button>
             <button
               type="button"

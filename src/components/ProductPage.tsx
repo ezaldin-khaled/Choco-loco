@@ -85,25 +85,10 @@ const ProductPage: React.FC = () => {
   
   // Get primary image - find image with isPrimary: true, or first image, sorted by displayOrder
   const sortedImages = product?.images
-    ? [...product.images]
-        .filter(img => img && img.image) // Filter out null/undefined/empty images
-        .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
+    ? [...product.images].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
     : [];
   const primaryImage = sortedImages.find(img => img.isPrimary)?.image || 
                        sortedImages[0]?.image || '';
-  
-  // Debug logging
-  React.useEffect(() => {
-    if (product) {
-      console.log('[ProductPage] Product loaded:', {
-        name: product.name,
-        hasImages: !!product.images,
-        imagesCount: product.images?.length || 0,
-        images: product.images,
-        primaryImage: primaryImage
-      });
-    }
-  }, [product, primaryImage]);
 
   if (loading) {
     return (
