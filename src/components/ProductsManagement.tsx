@@ -261,7 +261,7 @@ const ProductsManagement: React.FC = () => {
       }
       newImages.splice(index, 1);
       // If we removed the primary image, make the first one primary
-      if (newImages.length > 0 && prev[index]?.isPrimary) {
+      if (newImages.length > 0 && prev[index]?.isPrimary && newImages[0]) {
         newImages[0].isPrimary = true;
       }
       return newImages;
