@@ -30,12 +30,14 @@ const Products: React.FC = () => {
     if (products.length > 0) {
       console.log('[Products] Loaded products:', products.length);
       const firstProduct = products[0];
-      console.log('[Products] First product sample:', {
-        name: firstProduct.name,
-        hasImages: !!firstProduct.images,
-        imagesCount: firstProduct.images?.length || 0,
-        images: firstProduct.images
-      });
+      if (firstProduct) {
+        console.log('[Products] First product sample:', {
+          name: firstProduct.name,
+          hasImages: !!firstProduct.images,
+          imagesCount: firstProduct.images?.length || 0,
+          images: firstProduct.images
+        });
+      }
     }
   }, [products]);
   
