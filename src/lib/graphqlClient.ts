@@ -1,6 +1,7 @@
 import { ApolloClient, InMemoryCache, createHttpLink, from } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 import { onError } from '@apollo/client/link/error';
+import { ApolloLink, Observable } from '@apollo/client';
 import { API_URL } from '../config/api';
 
 // Get JWT token from localStorage
@@ -94,6 +95,138 @@ const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
       response: nError.response,
     });
   }
+});
+
+// Helper function to check if variables contain File objects
+const hasFiles = (variables: any): boolean => {
+  if (!variables) return false;
+  
+  const checkValue = (value: any): boolean => {
+    if (value instanceof File) return true;
+    if (value instanceof FileList) return true;
+    if (Array.isArray(value)) return value.some(checkValue);
+    if (value && typeof value === 'object') {
+      return Object.values(value).some(checkValue);
+    }
+    return false;
+  };
+  
+  return checkValue(variables);
+};
+
+// Custom link to handle file uploads using GraphQL multipart request spec
+const uploadLink = new ApolloLink((operation, forward) => {
+  const { variables } = operation;
+  
+  // If no files, proceed normally
+  if (!hasFiles(variables)) {
+    return forward(operation);
+  }
+  
+  // For file uploads, create FormData following GraphQL multipart request spec
+  const formData = new FormData();
+  const fileMap: { [key: string]: string[] } = {};
+  let fileIndex = 0;
+  
+  // Process variables and extract files
+  const processValue = (value: any, path: string[]): any => {
+    if (value instanceof File) {
+      const fileKey = fileIndex++;
+      const fileKeyStr = fileKey.toString();
+      const variablePath = path.length > 0 ? `variables.${path.join('.')}` : 'variables';
+      if (!fileMap[fileKeyStr]) {
+        fileMap[fileKeyStr] = [];
+      }
+      fileMap[fileKeyStr]!.push(variablePath);
+      formData.append(fileKeyStr, value);
+      return null; // Will be replaced with file reference in operations
+    }
+    if (value instanceof FileList) {
+      const fileKey = fileIndex++;
+      const fileKeyStr = fileKey.toString();
+      const variablePath = path.length > 0 ? `variables.${path.join('.')}` : 'variables';
+      if (!fileMap[fileKeyStr]) {
+        fileMap[fileKeyStr] = [];
+      }
+      fileMap[fileKeyStr]!.push(variablePath);
+      Array.from(value).forEach((file) => {
+        formData.append(fileKeyStr, file);
+      });
+      return null;
+    }
+    if (Array.isArray(value)) {
+      return value.map((item, index) => processValue(item, [...path, index.toString()]));
+    }
+    if (value && typeof value === 'object' && value !== null) {
+      const processed: any = {};
+      Object.keys(value).forEach((key) => {
+        processed[key] = processValue(value[key], [...path, key]);
+      });
+      return processed;
+    }
+    return value;
+  };
+  
+  const processedVariables = processValue(variables, []);
+  
+  // Create operations object
+  const operations = {
+    query: operation.query.loc?.source.body || operation.query,
+    variables: processedVariables,
+  };
+  
+  // Add operations and map to FormData
+  formData.append('operations', JSON.stringify(operations));
+  formData.append('map', JSON.stringify(fileMap));
+  
+  // Get auth headers
+  const token = getAuthToken();
+  const csrfToken = getCsrfToken();
+  const headers: Record<string, string> = {};
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token.trim()}`;
+  }
+  if (csrfToken) {
+    headers['X-CSRFToken'] = csrfToken;
+  }
+  
+  console.log('[Upload Link] Processing file upload:', {
+    operationName: operation.operationName,
+    fileMap,
+    variables: processedVariables,
+  });
+  
+  return new Observable((observer) => {
+    fetch(API_URL, {
+      method: 'POST',
+      headers,
+      credentials: 'include',
+      body: formData,
+    })
+      .then((response) => {
+        if (!response.ok) {
+          return response.text().then((text) => {
+            console.error('[Upload Link] Upload failed:', {
+              status: response.status,
+              statusText: response.statusText,
+              body: text,
+            });
+            throw new Error(`HTTP error! status: ${response.status}, body: ${text}`);
+          });
+        }
+        return response.json();
+      })
+      .then((data) => {
+        console.log('[Upload Link] Upload successful:', data);
+        observer.next({ data });
+        observer.complete();
+      })
+      .catch((error) => {
+        console.error('[Upload Link] Upload error:', error);
+        observer.error(error);
+      });
+  });
 });
 
 // Create HTTP link with better error handling
@@ -199,8 +332,9 @@ const authLink = setContext((_, { headers }) => {
 });
 
 // Create Apollo Client instance
+// Use uploadLink for file uploads, otherwise use standard httpLink with auth
 export const apolloClient = new ApolloClient({
-  link: from([errorLink, authLink, httpLink]),
+  link: from([errorLink, uploadLink, authLink, httpLink]),
   cache: new InMemoryCache(),
   defaultOptions: {
     watchQuery: {
