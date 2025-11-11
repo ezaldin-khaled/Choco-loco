@@ -2,6 +2,7 @@ import { ApolloClient, InMemoryCache, createHttpLink, from } from '@apollo/clien
 import { setContext } from '@apollo/client/link/context';
 import { onError } from '@apollo/client/link/error';
 import { ApolloLink, Observable } from '@apollo/client';
+import { print } from 'graphql';
 import { API_URL } from '../config/api';
 
 // Get JWT token from localStorage
@@ -169,9 +170,12 @@ const uploadLink = new ApolloLink((operation, forward) => {
   
   const processedVariables = processValue(variables, []);
   
+  // Convert DocumentNode to string using print
+  const queryString = print(operation.query);
+  
   // Create operations object
   const operations = {
-    query: operation.query.loc?.source.body || operation.query,
+    query: queryString,
     variables: processedVariables,
   };
   
