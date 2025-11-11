@@ -285,8 +285,9 @@ const ProductsManagement: React.FC = () => {
   const updateMainImageAltText = (index: number, altText: string) => {
     setMainImages(prev => {
       const newImages = [...prev];
-      if (newImages[index]) {
-        newImages[index].altText = altText;
+      const imageToUpdate = newImages[index];
+      if (imageToUpdate) {
+        imageToUpdate.altText = altText;
       }
       return newImages;
     });
@@ -295,8 +296,9 @@ const ProductsManagement: React.FC = () => {
   const updateUseCaseImageAltText = (index: number, altText: string) => {
     setUseCaseImages(prev => {
       const newImages = [...prev];
-      if (newImages[index]) {
-        newImages[index].altText = altText;
+      const imageToUpdate = newImages[index];
+      if (imageToUpdate) {
+        imageToUpdate.altText = altText;
       }
       return newImages;
     });
