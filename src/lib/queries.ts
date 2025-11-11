@@ -986,7 +986,7 @@ export const UPLOAD_PRODUCT_IMAGE = gql`
 `;
 
 export const UPLOAD_PRODUCT_USECASE_IMAGE = gql`
-  mutation UploadProductUseCaseImage($input: ProductImageInput!) {
+  mutation UploadProductUseCaseImage($input: ProductImageUseCaseInput!) {
     uploadProductUseCaseImage(input: $input) {
       success
       message

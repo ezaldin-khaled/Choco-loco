@@ -1,6 +1,6 @@
 import React, { useState, FormEvent } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
-import { GET_PRODUCTS, CREATE_PRODUCT, UPDATE_PRODUCT, GET_BRANDS, GET_CATEGORIES, UPLOAD_PRODUCT_IMAGE } from '../lib/queries';
+import { GET_PRODUCTS, CREATE_PRODUCT, UPDATE_PRODUCT, GET_BRANDS, GET_CATEGORIES, UPLOAD_PRODUCT_IMAGE, UPLOAD_PRODUCT_USECASE_IMAGE } from '../lib/queries';
 import './ProductsManagement.css';
 
 interface Product {
@@ -56,6 +56,7 @@ const ProductsManagement: React.FC = () => {
   const { data: categoriesData, loading: categoriesLoading } = useQuery(GET_CATEGORIES);
   
   const [uploadProductImage] = useMutation(UPLOAD_PRODUCT_IMAGE);
+  const [uploadUseCaseImage] = useMutation(UPLOAD_PRODUCT_USECASE_IMAGE);
 
   // Helper function to convert File to base64
   const fileToBase64 = (file: File): Promise<string> => {
@@ -135,15 +136,12 @@ const ProductsManagement: React.FC = () => {
         // Convert file to base64
         const base64Image = await fileToBase64(img.file);
         
-        // Use the same uploadProductImage mutation for use case images
-        // The backend likely handles use case images the same way as regular images
-        const result = await uploadProductImage({
+        // Use the dedicated uploadProductUseCaseImage mutation
+        const result = await uploadUseCaseImage({
           variables: {
             input: {
               productId: productId,
               image: base64Image,
-              altText: img.altText || `${formData.name} use case ${i + 1}`,
-              isPrimary: false, // Use case images are never primary
               displayOrder: i + 1,
             },
           },
