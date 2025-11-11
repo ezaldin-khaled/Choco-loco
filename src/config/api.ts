@@ -59,11 +59,13 @@ export const MEDIA_URL = BACKEND_URL;
  */
 export const getImageUrl = (imagePath: string | null | undefined): string => {
   if (!imagePath) {
+    console.warn('[getImageUrl] No image path provided, using fallback');
     return '/Assets/logo.png'; // Default fallback image
   }
   
   // If already a full URL, return as is
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    console.log('[getImageUrl] Already full URL:', imagePath);
     return imagePath;
   }
   
@@ -71,10 +73,14 @@ export const getImageUrl = (imagePath: string | null | undefined): string => {
   // Formula: Backend URL + Image Path
   // Example: "https://164.90.215.173" + "/media/products/image.jpg"
   if (imagePath.startsWith('/')) {
-    return `${BACKEND_URL}${imagePath}`;
+    const fullUrl = `${BACKEND_URL}${imagePath}`;
+    console.log('[getImageUrl] Constructed URL:', fullUrl, 'from path:', imagePath);
+    return fullUrl;
   }
   
   // If path doesn't start with /, add it
-  return `${BACKEND_URL}/${imagePath}`;
+  const fullUrl = `${BACKEND_URL}/${imagePath}`;
+  console.log('[getImageUrl] Constructed URL (added /):', fullUrl, 'from path:', imagePath);
+  return fullUrl;
 };
 
