@@ -68,6 +68,7 @@ const ProductsManagement: React.FC = () => {
     // Upload main images
     for (let i = 0; i < mainImages.length; i++) {
       const img = mainImages[i];
+      if (!img) continue; // Skip if image is undefined
       try {
         await uploadProductImage({
           variables: {
@@ -92,6 +93,7 @@ const ProductsManagement: React.FC = () => {
     // Upload use case images
     for (let i = 0; i < useCaseImages.length; i++) {
       const img = useCaseImages[i];
+      if (!img) continue; // Skip if image is undefined
       try {
         await uploadUseCaseImage({
           variables: {
