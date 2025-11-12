@@ -87,8 +87,18 @@ const ProductPage: React.FC = () => {
   const sortedImages = product?.images
     ? [...product.images].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
     : [];
-  const primaryImage = sortedImages.find(img => img.isPrimary)?.image || 
-                       sortedImages[0]?.image || '';
+  const primaryImageObj = sortedImages.find(img => img.isPrimary) || sortedImages[0];
+  const primaryImage = primaryImageObj?.image || '';
+  
+  // State for selected image
+  const [selectedImage, setSelectedImage] = useState<string>(primaryImage);
+  
+  // Update selected image when product loads
+  useEffect(() => {
+    if (primaryImage) {
+      setSelectedImage(primaryImage);
+    }
+  }, [primaryImage]);
 
   if (loading) {
     return (
@@ -129,15 +139,39 @@ const ProductPage: React.FC = () => {
         <div className="container">
           <div className="product-details">
             <div className="product-image-section">
-              <div className="product-image-container">
-                <img 
-                  src={getImageUrl(primaryImage)} 
-                  alt={sortedImages.find(img => img.isPrimary)?.altText || sortedImages[0]?.altText || product.name} 
-                  className="product-main-image"
-                  onError={(e) => {
-                    e.currentTarget.src = '/Assets/logo.png';
-                  }}
-                />
+              <div className="product-images-wrapper">
+                {/* Thumbnail gallery on the left */}
+                {sortedImages.length > 1 && (
+                  <div className="product-thumbnails">
+                    {sortedImages.map((img) => (
+                      <div
+                        key={img.id}
+                        className={`thumbnail-item ${selectedImage === img.image ? 'active' : ''}`}
+                        onClick={() => setSelectedImage(img.image)}
+                      >
+                        <img
+                          src={getImageUrl(img.image)}
+                          alt={img.altText || product.name}
+                          onError={(e) => {
+                            e.currentTarget.src = '/Assets/logo.png';
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Main image container */}
+                <div className="product-image-container">
+                  <img 
+                    src={getImageUrl(selectedImage)} 
+                    alt={sortedImages.find(img => img.image === selectedImage)?.altText || primaryImageObj?.altText || product.name} 
+                    className="product-main-image"
+                    onError={(e) => {
+                      e.currentTarget.src = '/Assets/logo.png';
+                    }}
+                  />
+                </div>
               </div>
             </div>
             
