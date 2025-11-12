@@ -183,12 +183,37 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  text-decoration: none;
 }
 
 .icon-btn:hover {
   background-color: #F5F5F5;
   color: #E91E63;
   transform: scale(1.1);
+}
+
+.cart-icon-wrapper {
+  position: relative;
+}
+
+.cart-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background-color: #E91E63;
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  line-height: 1;
+  border: 2px solid white;
+  transform: translate(25%, -25%);
 }
 
 /* Responsive Design */
